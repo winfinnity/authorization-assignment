@@ -7,6 +7,7 @@ import nl.rabobank.account.PaymentAccount;
 import nl.rabobank.account.SavingsAccount;
 import nl.rabobank.authorizations.Authorization;
 import nl.rabobank.authorizations.PowerOfAttorney;
+import nl.rabobank.exceptions.DuplicateAuthorizationException;
 import nl.rabobank.exceptions.InvalidAccountException;
 import nl.rabobank.model.CreateAuthorizationRequest;
 import nl.rabobank.mongo.entities.AccountDto;
@@ -15,6 +16,7 @@ import nl.rabobank.mongo.entities.PowerOfAttorneyDto;
 import nl.rabobank.mongo.repositories.AccountsRepository;
 import nl.rabobank.mongo.repositories.PowerOfAttorneysRepository;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import lombok.AllArgsConstructor;
@@ -36,8 +38,14 @@ public class AuthorizationServices {
     }
 
     public PowerOfAttorney createPowerOfAttorney(CreateAuthorizationRequest request) {
-        var accountDto = validateAccount(request.accountNumber());
-        return mapToPowerOfAttorneyDTO(request,accountDto);
+        try {
+            var accountDto = validateAccount(request.accountNumber());
+            var powerOfAttorneyDto = authorizationsRepository.insert(mapToPowerOfAttorneyDTO(request, accountDto));
+            return mapToPowerOfAttorney(powerOfAttorneyDto);
+        }
+        catch (DuplicateKeyException e) {
+            throw new DuplicateAuthorizationException();
+        }
     }
 
     private PowerOfAttorney mapToPowerOfAttorney(PowerOfAttorneyDto dto) {
@@ -70,15 +78,12 @@ public class AuthorizationServices {
         return accountDto;
     }
 
-    private PowerOfAttorney mapToPowerOfAttorneyDTO(CreateAuthorizationRequest request, AccountDto accountDto) {
-        var powerOfAttorneyDto = PowerOfAttorneyDto.builder()
+    private PowerOfAttorneyDto mapToPowerOfAttorneyDTO(CreateAuthorizationRequest request, AccountDto accountDto) {
+       return PowerOfAttorneyDto.builder()
             .grantor(request.grantor())
             .grantee(request.grantee())
             .account(accountDto)
             .authorization(request.authorization().toString())
             .build();
-
-        return mapToPowerOfAttorney(powerOfAttorneyDto);
-
     }
 }

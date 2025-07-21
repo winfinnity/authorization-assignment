@@ -1,5 +1,6 @@
 package nl.rabobank.controller;
 
+import nl.rabobank.exceptions.DuplicateAuthorizationException;
 import nl.rabobank.exceptions.InvalidAccountException;
 import nl.rabobank.model.ErrorResponse;
 
@@ -17,6 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExceptionController {
 
+    @ExceptionHandler(DuplicateAuthorizationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<ErrorResponse> handleException(DuplicateAuthorizationException e) {
+        log.warn(e.getMessage());
+        return new ResponseEntity<>(createErrorResponse(e.getMessage()), HttpStatus.CONFLICT);
+    }
 
     @ExceptionHandler(InvalidAccountException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

@@ -5,14 +5,10 @@ import jakarta.annotation.PostConstruct;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ContextConfiguration;
 
 import static io.restassured.RestAssured.given;
 
-
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ContextConfiguration(classes = { RaboAssignmentApplication.class})
-
 class RabobankAssignmentAppTest {
 
     @LocalServerPort
