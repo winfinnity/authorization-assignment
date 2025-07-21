@@ -1,0 +1,26 @@
+[
+  {
+    "accountNumber": "00001",
+    "accountHolderName": "John Doe",
+    "balance": "50.0",
+    "accountType": "PAYMENT"
+  },
+  {
+    "accountNumber": "00002",
+    "accountHolderName": "Jane Doe",
+    "balance": "500.0",
+    "accountType": "SAVING"
+  },
+  {
+    "accountNumber": "00003",
+    "accountHolderName": "Jane Doe",
+    "balance": "100.0",
+    "accountType": "SAVING"
+  },
+  {
+    "accountNumber": "00004",
+    "accountHolderName": "Jane Doe",
+    "balance": "10.0",
+    "accountType": "PAYMENT"
+  }
+]

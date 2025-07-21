@@ -1,0 +1,25 @@
+@startuml
+actor       User    as user
+participant "Authorizations Services" as app
+database    MongoDB as db
+
+
+
+group Create authorization
+user -> app : POST 'Add authorization request' (grantor/grantee/accountNumber/authorization)
+app  --> db : fetch account
+return
+app --> db : create power of attorney
+return
+app->user : response OK/NOK
+end
+
+group List authorized accounts
+user -> app : GET 'List of accounts by grantee request' (grantee)
+app -> db: fetch power of attorney by grantee
+return
+app -> user : response list of authorized accounts with authorization
+end
+
+
+@enduml
