@@ -2,24 +2,33 @@ package nl.rabobank.cucumber.glue;
 
 import static io.restassured.RestAssured.given;
 
+import java.io.IOException;
 import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 
 import nl.rabobank.RaboAssignmentApplication;
 import nl.rabobank.authorizations.Authorization;
-import nl.rabobank.authorizations.PowerOfAttorney;
 import nl.rabobank.model.CreateAuthorizationRequest;
+import nl.rabobank.mongo.entities.AccountDto;
+import nl.rabobank.mongo.entities.AccountType;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.repository.Query;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.But;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.spring.CucumberContextConfiguration;
@@ -46,9 +55,14 @@ public class StepDefinitions {
 
     private Response response;
 
+    private AccountDto account;
+
+
     @PostConstruct
-    public void init() {
+    public void init() throws IOException {
+
         uri = "http://localhost:" + port;
+        setUpAccounts();
     }
 
     @When("I send a create authorization request with body {string} {string} {string} {string}")
@@ -81,6 +95,24 @@ public class StepDefinitions {
         log.info("Authorizations count is {}", authorizations.size());
     }
 
+    @Given("Create a new account {string}")
+    public void create_new_account(String accountNumber)  {
+        var newAccount = AccountDto.builder()
+            .accountType(AccountType.PAYMENT)
+            .accountNumber(accountNumber)
+            .accountHolderName("new account")
+            .balance(0.0)
+            .build();
+        account = mongoTemplate.insert(newAccount);
+    }
+
+    @But("Account got deleted")
+    public void account_deleted() {
+        mongoTemplate.remove(account);
+    }
+
+
+
     private void sendRequest(String method, String endpoint, String body) {
         switch (method.toUpperCase()) {
         case "GET":
@@ -92,6 +124,20 @@ public class StepDefinitions {
             break;
         default:
             throw new IllegalArgumentException("Invalid method: " + method);
+        }
+    }
+
+    private void setUpAccounts() throws IOException {
+
+        var accounts = objectMapper.readValue(
+            new ClassPathResource("/data/accounts.json").getFile(), new TypeReference<List<AccountDto>>() {
+            });
+        try {
+            mongoTemplate.insertAll(accounts);
+            log.info("Accounts setup for test: {}", accounts);
+        }
+        catch (Exception e) {
+            log.info("Accounts already setup");
         }
     }
 

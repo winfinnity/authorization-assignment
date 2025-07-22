@@ -30,7 +30,7 @@
         <lombok.version>1.18.38</lombok.version>
         <rest-assured.version>5.5.5</rest-assured.version>
         <flapdoodle.version>4.12.0</flapdoodle.version>
-        <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
 
     </properties>
 
