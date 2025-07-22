@@ -2,10 +2,13 @@ package nl.rabobank.cucumber.glue;
 
 import static io.restassured.RestAssured.given;
 
+import java.util.List;
+
 import jakarta.annotation.PostConstruct;
 
 import nl.rabobank.RaboAssignmentApplication;
 import nl.rabobank.authorizations.Authorization;
+import nl.rabobank.authorizations.PowerOfAttorney;
 import nl.rabobank.model.CreateAuthorizationRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +19,18 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.spring.CucumberContextConfiguration;
+import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@SpringBootTest(classes = RaboAssignmentApplication.class,webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @CucumberContextConfiguration
+@SpringBootTest(classes = RaboAssignmentApplication.class,webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class StepDefinitions {
 
     @Autowired
@@ -38,6 +43,7 @@ public class StepDefinitions {
 
     private String uri;
 
+
     private Response response;
 
     @PostConstruct
@@ -45,19 +51,35 @@ public class StepDefinitions {
         uri = "http://localhost:" + port;
     }
 
-    @When("I send a {string} request to {string} with body {string} {string} {string} {string}")
-    public void iSendAMethodRequestToEndpointWithBody(String method, String endpoint,
+    @When("I send a create authorization request with body {string} {string} {string} {string}")
+    public void post_create_authorization_request_with_body(
         String grantor, String grantee, String accountNumber, String authorization) throws JsonProcessingException {
         var body = new CreateAuthorizationRequest(grantor,grantee,accountNumber, Authorization.valueOf(authorization));
         var jsonBody = objectMapper.writeValueAsString(body);
-        sendRequest(method,endpoint,jsonBody);
+        sendRequest("POST","/api/authorizations",jsonBody);
+        log.info("Authorization request has been sent");
+    }
+
+    @And("I send request to get authorizations for {string}")
+    public void get_authorizations_for_grantee(String grantee) {
+        sendRequest("GET","/api/authorizations?grantee="+grantee,null);
+        log.info("Authorizations for grantee {}", grantee);
     }
 
     @Then("I should get {int} status code")
     public void the_response_status_code_should_be(int statusCode) {
+        log.info("Status code is {}", response.getStatusCode());
         response.then().statusCode(statusCode);
     }
 
+    @Then("I should get {int} authorizations")
+    public void authorizations_count_should_be(int count) {
+        List<Object> authorizations = response.getBody().as(new TypeRef<List<Object>>(){});
+        if (authorizations.size() != count) {
+            throw new AssertionError("Expected " + count + " authorizations, but got " + authorizations.size());
+        }
+        log.info("Authorizations count is {}", authorizations.size());
+    }
 
     private void sendRequest(String method, String endpoint, String body) {
         switch (method.toUpperCase()) {
